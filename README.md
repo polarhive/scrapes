@@ -1,6 +1,6 @@
 # scrapes
 
-A simple tool to fetch your class and section information from PESUAcademy’s public data.
+A simple tool to fetch your class and section information from PESUAcademy and dump it into a CSV file.
 
 ## setup
 
