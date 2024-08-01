@@ -1,28 +1,32 @@
+import os
+from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
 import csv
 
-# config
-start_SRN = 1  # Starting SRN value without leading zeros
-end_SRN = 721  # Ending SRN
-prefix = "PES2UG23CS"
+load_dotenv()
+csrf_token = os.getenv("CSRF_TOKEN")
+cookie = os.getenv("COOKIE")
 
-# session details
-csrf_token = ""
-cookie = ""
+# config
+start_SRN = 1  # Starting SRN without leading zeros
+end_SRN = 4  # Ending SRN
+prefix = "PES2UG23CS"
 
 # base URL
 url = 'https://www.pesuacademy.com/Academy/getStudentClassInfo'
 
-# dump into a csv file
+def get_text_or_na(element):
+    return element.get_text(strip=True) if element else "NA"
+
+# dump into a CSV file
 with open('student_data.csv', 'w', newline='') as csvfile:
     fieldnames = ['ID', 'Name', 'Old Section', 'New Section']
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-
     writer.writeheader()
 
-    for i in range(start_SRN, end_SRN):
-        id_ = f"{prefix}{i:03d}"  # zero-padded to 3 digits
+    for i in range(start_SRN, end_SRN + 1):  # Include end_SRN by using end_SRN + 1
+        id_ = f"{prefix}{i:03d}"  # Zero-padded to 3 digits
         print(f"Processing ID: {id_}")
 
         # POST request
@@ -51,14 +55,13 @@ with open('student_data.csv', 'w', newline='') as csvfile:
             data={'loginId': id_}
         )
 
-        # parse stuff w/ BeautifulSoup
+        # parse stuff with BeautifulSoup
         soup = BeautifulSoup(response.text, 'html.parser')
-        name = soup.select_one('tbody tr:nth-of-type(2) td:nth-of-type(3)').get_text(strip=True)
-        old_section = soup.select_one('tbody tr:nth-of-type(1) td:nth-of-type(5)').get_text(strip=True)
-        new_section = soup.select_one('tbody tr:nth-of-type(2) td:nth-of-type(5)').get_text(strip=True)
+        name = get_text_or_na(soup.select_one('tbody tr:nth-of-type(2) td:nth-of-type(3)'))
+        old_section = get_text_or_na(soup.select_one('tbody tr:nth-of-type(1) td:nth-of-type(5)'))
+        new_section = get_text_or_na(soup.select_one('tbody tr:nth-of-type(2) td:nth-of-type(5)'))
 
         print(f"Name: {name} | Old Section: {old_section} | New Section: {new_section}")
         writer.writerow({'ID': id_, 'Name': name, 'Old Section': old_section, 'New Section': new_section})
 
-print("open: 'student_data.csv'.")
-
+print("check: 'student_data.csv'")
